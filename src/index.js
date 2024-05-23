@@ -2,6 +2,7 @@
 
 import dotnev from "dotenv"
 import connectDb from "./db/db.js";
+import { app } from "./app.js";
 
 dotnev.config({
     path: './env'
