@@ -6,14 +6,14 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const generateAccessTokenAndRefreshToken = async(userId) => {
     try {
-        const user = User.findById(userId)
-        const accesToken = user.generateAccessToken()
-        const refereshToken = user.generaterefreshToken() 
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken() 
 
-        user.refereshToken =refereshToken
+        user.refreshToken =refreshToken
         await user.save({ validateBeforeSave: false })
 
-        return {accesToken, refereshToken}
+        return {accessToken, refreshToken}
 
 
     } catch (error) {
@@ -102,7 +102,7 @@ const registerUser = asyncHandler( async (req, res) => {
 
 })
 
-const loginUser = asynHandler(async (req, res) =>{
+const loginUser = asyncHandler(async (req, res) =>{
     //req body se data
     const {email, password, username} =req.body
     //username or email
@@ -125,7 +125,7 @@ const loginUser = asynHandler(async (req, res) =>{
         throw new ApiError(401, "Check Your Password")
     }
     // access and refresh token
-    const {accesToken, refereshToken} = await generateAccessTokenAndRefreshToken(user._id)
+    const {accessToken, refreshToken} = await generateAccessTokenAndRefreshToken(user._id)
 
     const loggedinUser = await User.findById(user._id).select("-password -refreshToken")
     //send cookie
@@ -134,11 +134,11 @@ const loginUser = asynHandler(async (req, res) =>{
         secure: true
     }
 
-    return res.status(200).cookie("accesToken", accesToken, options).cookie("refreshToken", refereshToken,options).json(
+    return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken,options).json(
         new ApiResponse(
             200,
             {
-                user: loggedinUser, accesToken, refereshToken
+                user: loggedinUser, accessToken, refreshToken
             },
             "User logged in suucessfully"
         )
@@ -147,16 +147,16 @@ const loginUser = asynHandler(async (req, res) =>{
 
 })
 
-const logoutUser = asynHandler(async(req, res) => {
+const logoutUser = asyncHandler(async(req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
             $set:{
-                refereshToken: undefined
+                refreshToken: undefined
             }
         },
         {
-            new:true
+            new: true
         }
     )
 
@@ -165,7 +165,7 @@ const logoutUser = asynHandler(async(req, res) => {
         secure: true
     }
 
-    return res.status(200).clearCookie("accesToken", options).clearCookie("refreshToken", options)
+    return res.status(200).clearCookie("accessToken", options).clearCookie("refreshToken", options).json(new ApiResponse(200, {}, "user logged out"))
 })
 
 export { 
